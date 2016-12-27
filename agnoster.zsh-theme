@@ -36,6 +36,10 @@ DETACHED="\u27a6"
 CROSS="\u2718"
 LIGHTNING="\u26a1"
 GEAR="\u2699"
+STAR="\u2606"
+FORWARD_ARROW="\u21E2"
+BACK_ARROW="\u21E0"
+FORWARD_AND_BACK_ARROW="\u21C6"
 
 # Begin a segment
 # Takes two arguments, background and foreground. Both can be omitted,
@@ -82,6 +86,11 @@ prompt_git() {
   is_dirty() {
     test -n "$(git status --porcelain --ignore-submodules)"
   }
+  has_remote() {
+    git rev-parse --abbrev-ref --symbolic-full-name @{u} > /dev/null 2>&1
+    return $?
+  }
+
   ref="$vcs_info_msg_0_"
   if [[ -n "$ref" ]]; then
     if is_dirty; then
@@ -90,6 +99,26 @@ prompt_git() {
     else
       color=green
       ref="${ref} "
+    fi
+    if has_remote; then
+
+      local current_branch="$(git rev-parse --abbrev-ref HEAD )"
+      local remote_branch="$(git rev-parse --abbrev-ref --symbolic-full-name @{u})"
+
+      local commits_behind="$(git rev-list --left-right --count $remote_branch...$current_branch | awk '{print $1}')"
+      local commits_ahead="$(git rev-list --left-right --count $remote_branch...$current_branch | awk '{print $2}')"
+
+      if [[ $commits_ahead > $commits_behind ]]; then
+        ref="$FORWARD_ARROW $ref"
+      fi
+      if [[ $commits_ahead < $commits_behind ]]; then
+        ref="$BACK_ARROW $ref"
+      fi
+      if [[ $commits_ahead > 0 && $commits_behind > 0 ]]; then
+        ref="$FORWARD_AND_BACK_ARROW $ref"
+      fi
+
+      ref="$STAR $ref"
     fi
     if [[ "${ref/.../}" == "$ref" ]]; then
       ref="$BRANCH $ref"
@@ -107,26 +136,15 @@ prompt_dir() {
 }
 
 # Status:
-# - was there an error
 # - am I root
 # - are there background jobs?
 prompt_status() {
   local symbols
   symbols=()
-  [[ $RETVAL -ne 0 ]] && symbols+="%{%F{red}%}$CROSS"
   [[ $UID -eq 0 ]] && symbols+="%{%F{yellow}%}$LIGHTNING"
   [[ $(jobs -l | wc -l) -gt 0 ]] && symbols+="%{%F{cyan}%}$GEAR"
 
   [[ -n "$symbols" ]] && prompt_segment $PRIMARY_FG default " $symbols "
-}
-
-# Display current virtual environment
-prompt_virtualenv() {
-  if [[ -n $VIRTUAL_ENV ]]; then
-    color=cyan
-    prompt_segment $color $PRIMARY_FG
-    print -Pn " $(basename $VIRTUAL_ENV) "
-  fi
 }
 
 ## Main prompt
@@ -135,7 +153,6 @@ prompt_agnoster_main() {
   CURRENT_BG='NONE'
   prompt_status
   prompt_context
-  prompt_virtualenv
   prompt_dir
   prompt_git
   prompt_end
