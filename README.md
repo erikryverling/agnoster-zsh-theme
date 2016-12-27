@@ -1,3 +1,17 @@
+# Fork description
+
+This is an _agnoster_ fork wich contains the following diffrences:
+* No annoying cross symbol when a command fails
+* Support for git remotes:
+    * Star symbol when the local branch is tracked remotly
+    * A forward arrow when the local branch is ahead of the remote
+    * A back arrow when the local branch is behind the remote
+    * A forward-and-back arrow when the local branch and remote has diverged
+
+![agnoster-improved](https://cloud.githubusercontent.com/assets/1917608/21509509/f64094aa-cc89-11e6-9b30-296059431868.png)
+
+---
+
 # agnoster.zsh-theme
 
 A ZSH theme optimized for people who use:
